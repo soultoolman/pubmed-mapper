@@ -1,0 +1,7 @@
+.idea
+*.pyc
+__pycache__
+dist
+build
+.pytest_cache
+pubmed_mapper.egg-info
