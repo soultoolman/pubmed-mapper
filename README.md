@@ -2,7 +2,7 @@
 
 ## UML
 
-# todo: add UML here.
+![UML](pubmed-mapper.png)
 
 ## installation
 
