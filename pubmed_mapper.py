@@ -9,6 +9,8 @@ import logging
 from os import listdir
 from os.path import join
 from datetime import date
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
 
 import click
 from lxml import etree
@@ -437,6 +439,9 @@ class Author(AuthorElementParserMixin):
         self.initials = initials
         self.affiliation = affiliation
 
+    def __repr__(self):
+        return '%s %s %s' % (self.last_name, self.initials, self.forename)
+
     def to_dict(self):
         return {
             'last_name': self.last_name,
@@ -461,7 +466,7 @@ class Author(AuthorElementParserMixin):
 
 class ArticleElementParserMixin(object):
     @staticmethod
-    def parse_pmid(element):
+    def _parse_pmid(element):
         return element.xpath('./MedlineCitation/PMID/text()')[0]
 
     @staticmethod
@@ -587,6 +592,9 @@ class Article(ArticleElementParserMixin):
         self.references = references
         self.pubdate = pubdate
 
+    def __repr__(self):
+        return self.title
+
     def to_dict(self):
         return {
             'pmid': self.pmid,
@@ -605,7 +613,7 @@ class Article(ArticleElementParserMixin):
 
     @classmethod
     def parse_element(cls, element):
-        pmid = cls.parse_pmid(element)
+        pmid = cls._parse_pmid(element)
         ids = cls.parse_ids(element)
         title = cls.parse_title(element)
         abstract = cls.parse_abstract(element)
@@ -632,6 +640,21 @@ class Article(ArticleElementParserMixin):
             pubdate=pubdate
         )
 
+    @classmethod
+    def parse_pmid(cls, pmid):
+        url = ('https://eutils.ncbi.nlm.nih.gov'
+               '/entrez/eutils/efetch.fcgi?'
+               'db=pubmed&id=%s&retmode=xml') % pmid
+        try:
+            handle = urlopen(url)
+        except (URLError, HTTPError) as e:
+            logger.warning('cannot download %s', pmid)
+            logger.exception(e)
+            return None
+        root = etree.parse(handle)
+        element = root.xpath('/PubmedArticleSet/PubmedArticle')[0]
+        return cls.parse_element(element)
+
 
 @click.group()
 @click.option(
@@ -651,6 +674,24 @@ def pubmed_mapper(log_file, log_level):
     logging.basicConfig(filename=log_file, level=log_level)
 
 
+@pubmed_mapper.command(name='pmid')
+@click.option(
+    '-p', '--pmid', required=True,
+    help='PubMed ID, eg, 32329900'
+)
+def parse_pmid(pmid):
+    """
+    parse PubMed ID, eg, 32329900
+    """
+    try:
+        article = Article.parse_pmid(pmid)
+        print(json.dumps(article.to_dict(), indent=4))
+    except Exception as e:
+        logger.error('cannot parse %s', pmid)
+        logger.exception(e)
+    return 0
+
+
 @pubmed_mapper.command(name='file')
 @click.option(
     '-i', '--infile', required=True,
@@ -662,7 +703,7 @@ def pubmed_mapper(log_file, log_level):
     type=click.Path(exists=False),
     help='output file, each line is a JSON string for Article object'
 )
-def single_file(infile, outfile):
+def parse_file(infile, outfile):
     """
     parse single PubMed XML file
     """
@@ -677,7 +718,7 @@ def single_file(infile, outfile):
                 article = Article.parse_element(pubmed_article_element)
                 fp.write('%s\n' % json.dumps(article.to_dict()))
             except Exception as e:
-                pmid = Article.parse_pmid(pubmed_article_element)
+                pmid = Article._parse_pmid(pubmed_article_element)
                 logger.error('cannot parse %s', pmid)
                 logger.exception(e)
     return 0
@@ -694,7 +735,7 @@ def single_file(infile, outfile):
     type=click.Path(exists=False),
     help='output file, each line is a JSON string for Article object'
 )
-def directory(indir, outfile):
+def parse_directory(indir, outfile):
     """
     parser a directory who contains multiple PubMed XML files
     """
@@ -708,7 +749,7 @@ def directory(indir, outfile):
                         article = Article.parse_element(pubmed_article_element)
                         writer.write('%s\n' % json.dumps(article.to_dict()))
                     except Exception as e:
-                        pmid = Article.parse_pmid(pubmed_article_element)
+                        pmid = Article._parse_pmid(pubmed_article_element)
                         logger.error('cannot parse %s', pmid)
                         logger.exception(e)
     return 0

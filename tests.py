@@ -236,7 +236,7 @@ class TestArticleElementParserMixin(object):
         </PubmedArticle>
         """
         element = etree.fromstring(xml)
-        pmid = pubmed_mapper.ArticleElementParserMixin.parse_pmid(element)
+        pmid = pubmed_mapper.ArticleElementParserMixin._parse_pmid(element)
         assert pmid == '29325141'
 
     def test_parse_ids(self):

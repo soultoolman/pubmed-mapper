@@ -5,3 +5,4 @@ dist
 build
 .pytest_cache
 pubmed_mapper.egg-info
+pubmed-mapper.log
