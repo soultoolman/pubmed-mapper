@@ -320,177 +320,6 @@ PUBDATE_PARSERS = [
 ]
 
 
-class AffiliationParserCityPostcodeCity(object):
-    """eg, Department of Pharmacy, University of Bonn, 53113 Bonn, Germany."""
-    pattern = re.compile(
-        (r'^(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<city_postcode>[\-\d]+) '
-         r'(?P<city>.+), '
-         r'(?P<country>.+)\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address=None,
-            city=data['city'],
-            city_postcode=data['city_postcode'],
-            province=None,
-            country=data['country']
-        )
-
-
-class AffiliationParserCityCityPostcode(object):
-    """"eg, College of Bioinformatics Science and Technology, Harbin Medical University, Harbin 150081, China."""
-    pattern = re.compile(
-        (r'^(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<city>.+) '
-         r'(?P<city_postcode>[\-\d]+), '
-         r'(?P<country>.+)\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address=None,
-            city=data['city'],
-            city_postcode=data['city_postcode'],
-            province=None,
-            country=data['country']
-        )
-
-
-class AffiliationParserCityCommaCityPostcode(object):
-    """eg, Department of Animal and Veterinary Sciences, Clemson University, Clemson, SC 29634, USA."""
-    pattern = re.compile(
-        (r'^(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<city>.+), '
-         r'(?P<city_postcode>.+ [\-\d]+), '
-         r'(?P<country>.+)\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address=None,
-            city=data['city'],
-            city_postcode=data['city_postcode'],
-            province=None,
-            country=data['country']
-        )
-
-
-class AffiliationParserCityProvince(object):
-    """eg, Pharmaceutical Research Department, Allen and Hanburys Research Ltd., Ware, Herts, U.K."""
-    pattern = re.compile(
-        (r'^(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<city>.+), '
-         r'(?P<province>\D+), '
-         r'(?P<country>.+)\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address=None,
-            city=data['city'],
-            city_postcode=None,
-            province=data['province'],
-            country=data['country']
-        )
-
-
-class AffiliationParserStreetNumberCommaStreet(object):
-    """eg, Cardiology Research Institute, Tomsk NRMC, 111-А, Kievskaya str.,
-     Tomsk 634012, Russian Federation; kitti-lit@yandex.ru."""
-    pattern = re.compile(
-        (r'^(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<street_number>.+), '
-         r'(?P<street>.+), '
-         r'(?P<city>.+) '
-         r'(?P<city_postcode>[\-\d]+), '
-         r'(?P<country>.+); .+@.+\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address='%s, %s' % (data['street_number'], data['street']),
-            city=data['city'],
-            city_postcode=data['city_postcode'],
-            province=None,
-            country=data['country']
-        )
-
-
-class AffiliationParserStreet(object):
-    """Institute of Health Sciences, Collegium Medicum,
-    University of Zielona Gora, Zyty 28 St., 65-046 Zielona Góra, Poland."""
-    pattern = re.compile(
-        (r'^(?P<institute>.+), '
-         r'(?P<college>.+), '
-         r'(?P<university>.+), '
-         r'(?P<street>.+), '
-         r'(?P<city_postcode>[\-\d]+) '
-         r'(?P<city>.+), '
-         r'(?P<country>.+)\.$')
-    )
-
-    def __call__(self, text):
-        match = self.pattern.search(text)
-        if not match:
-            return None
-        data = match.groupdict()
-        return Affiliation(
-            college=data['college'],
-            university=data['university'],
-            address=data['street'],
-            city=data['city'],
-            city_postcode=data['city_postcode'],
-            province=None,
-            country=data['country']
-        )
-
-
-AFFILIATION_PARSERS = [
-    AffiliationParserStreet(),
-    AffiliationParserStreetNumberCommaStreet(),
-    AffiliationParserCityCommaCityPostcode(),
-    AffiliationParserCityPostcodeCity(),
-    AffiliationParserCityCityPostcode(),
-]
-
-
 class JournalElementParserMixin(object):
     @staticmethod
     def parse_issn(element):
@@ -539,77 +368,6 @@ class Journal(JournalElementParserMixin):
         return cls(
             issn=issn, issn_type=issn_type, title=title, abbr=abbr
         )
-
-
-class Affiliation(object):
-    def __init__(
-            self,
-            college,
-            university,
-            address,
-            city,
-            city_postcode,
-            province,
-            country,
-    ):
-        """
-        Args:
-            college: 学院
-            university: 大学
-            address: 地址
-            city: 城市
-            city_postcode: 城市邮编
-            province: 省
-            country: 国家
-        """
-        self.college = college
-        self.university = university
-        self.address = address
-        self.city = city
-        self.city_postcode = city_postcode
-        self.province = province
-        self.country = country
-
-    def __repr__(self):
-        temp = []
-        if self.college:
-            temp.append(self.college)
-        if self.university:
-            temp.append(self.university)
-        if self.address:
-            temp.append(self.address)
-        if self.city:
-            temp.append(self.city)
-        if self.city_postcode:
-            temp.append(self.city_postcode)
-        if self.province:
-            temp.append(self.province)
-        if self.country:
-            temp.append(self.country)
-        return ', '.join(temp)
-
-    def to_dict(self):
-        return {
-            'college': self.college if self.college else None,
-            'university': self.university if self.university else None,
-            'address': self.address if self.address else None,
-            'city': self.city if self.city else None,
-            'city_postcode': self.city_postcode if self.city_postcode else None,
-            'province': self.province if self.province else None,
-            'country': self.country if self.country else None
-        }
-
-    @classmethod
-    def parse_element(cls, element):
-        text = element.xpath('./Affiliation/text()')[0]
-        affiliation = None
-        for parser in AFFILIATION_PARSERS:
-            affiliation = parser(text)
-            if affiliation is not None:
-                break
-        if affiliation is None:
-            logger.warning('cannot parse affiliation text: %s', text)
-        return affiliation
 
 
 class Reference(object):
@@ -663,10 +421,7 @@ class AuthorElementParserMixin(object):
 
     @staticmethod
     def parse_affiliation(element):
-        affiliation_element = extract_first(element.xpath('./AffiliationInfo'))
-        if affiliation_element is None:
-            return None
-        return Affiliation.parse_element(affiliation_element)
+        return extract_first(element.xpath('./AffiliationInfo/Affiliation/text()'))
 
 
 class Author(AuthorElementParserMixin):
@@ -687,7 +442,7 @@ class Author(AuthorElementParserMixin):
             'last_name': self.last_name,
             'forename': self.forename,
             'initials': self.initials,
-            'affiliation': self.affiliation.to_dict() if self.affiliation else None
+            'affiliation': self.affiliation
         }
 
     @classmethod

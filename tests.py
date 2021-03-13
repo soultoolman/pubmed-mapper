@@ -194,86 +194,6 @@ def test_pubdate_parser_medline_date_year_season_range():
     assert pubdate == date(1977, 10, 1)
 
 
-def test_affiliation_parser_city_postcode_city():
-    text = "Department of Pharmacy, University of Bonn, 53113 Bonn, Germany."
-    aff = pubmed_mapper.AffiliationParserCityPostcodeCity()(text)
-    assert aff is not None
-    assert aff.college == 'Department of Pharmacy'
-    assert aff.university == 'University of Bonn'
-    assert aff.address is None
-    assert aff.city == 'Bonn'
-    assert aff.city_postcode == '53113'
-    assert aff.province is None
-    assert aff.country == 'Germany'
-
-
-def test_affiliation_parser_city_city_postcode():
-    text = "College of Bioinformatics Science and Technology, Harbin Medical University, Harbin 150081, China."
-    aff = pubmed_mapper.AffiliationParserCityCityPostcode()(text)
-    assert aff is not None
-    assert aff.college == 'College of Bioinformatics Science and Technology'
-    assert aff.university == 'Harbin Medical University'
-    assert aff.address is None
-    assert aff.city == 'Harbin'
-    assert aff.city_postcode == '150081'
-    assert aff.province is None
-    assert aff.country == 'China'
-
-
-def test_affiliation_parser_city_comma_city_postcode():
-    text = "Department of Animal and Veterinary Sciences, Clemson University, Clemson, SC 29634, USA."
-    aff = pubmed_mapper.AffiliationParserCityCommaCityPostcode()(text)
-    assert aff is not None
-    assert aff.college == 'Department of Animal and Veterinary Sciences'
-    assert aff.university == 'Clemson University'
-    assert aff.address is None
-    assert aff.city == 'Clemson'
-    assert aff.city_postcode == 'SC 29634'
-    assert aff.province is None
-    assert aff.country == 'USA'
-
-
-def test_affiliation_parser_city_province():
-    text = "Pharmaceutical Research Department, Allen and Hanburys Research Ltd., Ware, Herts, U.K."
-    aff = pubmed_mapper.AffiliationParserCityProvince()(text)
-    assert aff is not None
-    assert aff.college == 'Pharmaceutical Research Department'
-    assert aff.university == 'Allen and Hanburys Research Ltd.'
-    assert aff.address is None
-    assert aff.city == 'Ware'
-    assert aff.city_postcode is None
-    assert aff.province == 'Herts'
-    assert aff.country == 'U.K'
-
-
-def test_affiliation_parser_street_number_comma_street():
-    text = ("Cardiology Research Institute, Tomsk NRMC, 111-А, Kievskaya str., "
-            "Tomsk 634012, Russian Federation; kitti-lit@yandex.ru.")
-    aff = pubmed_mapper.AffiliationParserStreetNumberCommaStreet()(text)
-    assert aff is not None
-    assert aff.college == 'Cardiology Research Institute'
-    assert aff.university == 'Tomsk NRMC'
-    assert aff.address == '111-А, Kievskaya str.'
-    assert aff.city == 'Tomsk'
-    assert aff.city_postcode == '634012'
-    assert aff.province is None
-    assert aff.country == 'Russian Federation'
-
-
-def test_affiliation_parser_street():
-    text = ("Institute of Health Sciences, Collegium Medicum, "
-            "University of Zielona Gora, Zyty 28 St., 65-046 Zielona Góra, Poland.")
-    aff = pubmed_mapper.AffiliationParserStreet()(text)
-    assert aff is not None
-    assert aff.college == 'Collegium Medicum'
-    assert aff.university == 'University of Zielona Gora'
-    assert aff.address == 'Zyty 28 St.'
-    assert aff.city == 'Zielona Góra'
-    assert aff.city_postcode == '65-046'
-    assert aff.province is None
-    assert aff.country == 'Poland'
-
-
 class TestAuthorElementParserMixin(object):
     def test_parse_last_name(self, author_element):
         last_name = pubmed_mapper.AuthorElementParserMixin.parse_last_name(author_element)
@@ -452,23 +372,17 @@ class TestArticleElementParserMixin(object):
         assert authors[0].last_name == 'Garganeeva'
         assert authors[0].forename == 'A A'
         assert authors[0].initials == 'AA'
-        assert authors[0].affiliation.college == 'Cardiology Research Institute'
-        assert authors[0].affiliation.university == 'Tomsk NRMC'
-        assert authors[0].affiliation.address == '111-А, Kievskaya str.'
-        assert authors[0].affiliation.city == 'Tomsk'
-        assert authors[0].affiliation.city_postcode == '634012'
-        assert authors[0].affiliation.province is None
-        assert authors[0].affiliation.country == 'Russian Federation'
+        assert authors[0].affiliation == (
+            'Cardiology Research Institute, Tomsk NRMC, 111-А, Kievskaya str., '
+            'Tomsk 634012, Russian Federation; kitti-lit@yandex.ru.'
+        )
         assert authors[1].last_name == 'Tukish'
         assert authors[1].forename == 'O V'
         assert authors[1].initials == 'OV'
-        assert authors[1].affiliation.college == 'Cardiology Research Institute'
-        assert authors[1].affiliation.university == 'Tomsk NRMC'
-        assert authors[1].affiliation.address == '111-А, Kievskaya str.'
-        assert authors[1].affiliation.city == 'Tomsk'
-        assert authors[1].affiliation.city_postcode == '634012'
-        assert authors[1].affiliation.province is None
-        assert authors[1].affiliation.country == 'Russian Federation'
+        assert authors[1].affiliation == (
+            'Cardiology Research Institute, Tomsk NRMC, 111-А, '
+            'Kievskaya str., Tomsk 634012, Russian Federation; kitti-lit@yandex.ru.'
+        )
 
     def test_parse_journal(self):
         xml = """
