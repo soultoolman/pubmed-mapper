@@ -1,5 +1,7 @@
 # pubmed-mapper: A Python Library that map PubMed XML to Python object
 
+[中文文档](https://zhuanlan.zhihu.com/p/357273904)
+
 ## 1. Philosophy
 
 [view UML](pubmed-mapper.png)
