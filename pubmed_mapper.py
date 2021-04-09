@@ -35,12 +35,27 @@ SEASONS = {
 
 class PubmedMapperError(Exception):
     """PubmedMapper Error"""
+    pass
 
 
 def extract_first(data):
     if not (isinstance(data, list) and (len(data) >= 1)):
         return None
     return data[0]
+
+
+def get_inner_html(element, strip=True):
+    texts = []
+    if element.text:
+        texts.append(element.text)
+    for child in element.getchildren():
+        texts.append(etree.tostring(child, encoding=str))
+    if element.tail:
+        texts.append(element.tail)
+    text = ''.join(texts)
+    if strip:
+        text = text.strip()
+    return text
 
 
 class ArticleId(object):
@@ -481,9 +496,10 @@ class ArticleElementParserMixin(object):
 
     @staticmethod
     def parse_title(element):
-        return extract_first(element.xpath(
-            './MedlineCitation/Article/ArticleTitle/text()'
+        title_element = extract_first(element.xpath(
+            './MedlineCitation/Article/ArticleTitle'
         ))
+        return get_inner_html(title_element)
 
     @staticmethod
     def parse_abstract(element):
@@ -496,7 +512,7 @@ class ArticleElementParserMixin(object):
             if label:
                 label = label.capitalize()
                 sub_title = '<strong>%s: </strong>' % label
-            paragraph = '<p>%s%s</p>' % (sub_title, abstract_text_element.text)
+            paragraph = '<p>%s%s</p>' % (sub_title, get_inner_html(abstract_text_element))
             paragraphs.append(paragraph)
         return ''.join(paragraphs)
 
