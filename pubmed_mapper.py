@@ -186,6 +186,29 @@ class PubdateParserMedlineDateMonthRange(PubdateDefaults):
         )
 
 
+class PubdateParserMedlineDateMonthRangeCrossDay(PubdateDefaults):
+    """MedlineDate字段同一年月份有区间"""
+    pattern = re.compile(
+        r'^(?P<year>\d{4}) (?P<month_text>[a-zA-Z]{3})-[a-zA-Z]{3} (?P<day>\d{1,2})$'
+    )
+
+    def __call__(self, element):
+        medline_date_text = extract_first(element.xpath('./MedlineDate/text()'))
+        if not medline_date_text:
+            return None
+        match = self.pattern.search(medline_date_text)
+        if not match:
+            return None
+        year = int(match.groupdict()['year'])
+        month = MONTHS[match.groupdict()['month_text'].capitalize()]
+        day = int(match.groupdict()['day'])
+        return date(
+            year=year,
+            month=month,
+            day=day
+        )
+
+ 
 class PubdateParserMedlineDateDayRange(PubdateDefaults):
     """MedlineDate字段同一年月份有区间"""
     pattern = re.compile(
@@ -328,6 +351,7 @@ PUBDATE_PARSERS = [
     PubdateParserYearOnly(),
     PubdateParserMedlineDateYearOnly(),
     PubdateParserMedlineDateMonthRange(),
+    PubdateParserMedlineDateMonthRangeCrossDay(),
     PubdateParserMedlineDateDayRange(),
     PubdateParserMedlineDateMonthRangeCrossYear(),
     PubdateParserMedlineDateRangeYear(),
